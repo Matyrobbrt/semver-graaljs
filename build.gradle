@@ -1,6 +1,18 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0'
+    }
+}
+
 plugins {
     id 'java'
+    id 'maven-publish'
+    id 'signing'
 }
+apply plugin: 'io.codearte.nexus-staging'
 
 group = 'com.matyrobbrt'
 
@@ -13,12 +25,91 @@ repositories {
 }
 
 dependencies {
+    compileOnly 'org.jetbrains:annotations:24.0.1'
     implementation group: 'org.graalvm.js', name: 'js', version: project.graal_version
     implementation group: 'org.graalvm.js', name: 'js-scriptengine', version: project.graal_version
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
 }
 
 processResources {
     from('node/dist/') {
         rename 'index.js', 'semver.js'
     }
+}
+
+test {
+    dependsOn('buildJS')
+    useJUnitPlatform()
+}
+
+tasks.register('buildJS') {
+    doFirst {
+        new ProcessBuilder('npm', 'run', 'package')
+            .inheritIO()
+            .directory(file('node'))
+//            .start()
+//            .waitFor()
+    }
+}
+
+jar.dependsOn('buildJS')
+
+publishing {
+    publications{
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = "curseforgeapi"
+                description = "Java bindings for the node semver library"
+                url = 'https://github.com/Matyrobbrt/semver-graaljs'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'matyrobbrt'
+                        name = 'Matyrobbrt'
+                        email = 'matyrobbrt@gmail.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git:github.com/matyrobbrt/semver-graaljs.git'
+                    developerConnection = 'scm:git:ssh://github.com/Matyrobbrt/semver-graaljs.git'
+                    url = 'https://github.com/Matyrobbrt/semver-graaljs'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "OSSRH"
+            url = project.hasProperty("snapshot") ?
+                    "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                    : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            credentials {
+                username = findProperty("ossrhUser") ? ossrhUser : ""
+                password = findProperty("ossrhPassword") ? ossrhPassword : ""
+            }
+        }
+    }
+}
+signing {
+    sign publishing.publications.mavenJava
+}
+nexusStaging {
+    serverUrl = "https://s01.oss.sonatype.org/service/local/"
+    username = findProperty("ossrhUser") ? ossrhUser : ""
+    password = findProperty("ossrhPassword") ? ossrhPassword : ""
+}
+if (project.hasProperty("close")) {
+    tasks.publish.finalizedBy closeAndReleaseRepository
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
 }

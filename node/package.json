@@ -1,11 +1,11 @@
 {
-  "name": "semver",
+  "name": "semverlib",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-	"package": "ncc build index.js -o dist --license LICENSE_semver"
+	"package": "ncc build index.js -o dist --license semver_license -m"
   },
   "author": "",
   "license": "ISC",
