@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.matyrobbrt'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(11)
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'org.graalvm.js', name: 'js', version: project.graal_version
+    implementation group: 'org.graalvm.js', name: 'js-scriptengine', version: project.graal_version
+}
+
+processResources {
+    from('node/dist/') {
+        rename 'index.js', 'semver.js'
+    }
+}
