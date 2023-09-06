@@ -105,9 +105,7 @@ nexusStaging {
     username = findProperty("ossrhUser") ? ossrhUser : ""
     password = findProperty("ossrhPassword") ? ossrhPassword : ""
 }
-if (project.hasProperty("close")) {
     tasks.publish.finalizedBy closeAndReleaseRepository
-}
 
 java {
     withJavadocJar()
